@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:custom="http://schemas.android.com/apk/res/br.com.etm.sunshine">
+
+    <br.com.etm.sunshine.LocationEditTextPreference
+        android:title="@string/pref_title_location"
+        android:key="@string/pref_key_location"
+        android:defaultValue="@string/pref_default_value_location"
+        custom:minLength="3"
+        android:inputType="text"
+        android:singleLine="true"
+        />
+
+    <ListPreference
+        android:title="@string/pref_title_temperature"
+        android:key="@string/pref_key_units"
+        android:entries="@array/temperature_units"
+        android:entryValues="@array/temperature_units_values"
+        android:defaultValue="@string/pref_default_value_temperature"
+        />
+
+    <ListPreference
+        android:title="@string/pref_art_pack_label"
+        android:key="@string/pref_art_pack_key"
+        android:defaultValue="@string/pref_art_pack_sunshine"
+        android:entryValues="@array/pref_art_pack_values"
+        android:entries="@array/pref_art_pack_options" />
+
+    <CheckBoxPreference
+        android:title="@string/pref_enable_notifications_label"
+        android:key="@string/pref_enable_notifications_key"
+        android:summaryOff="@string/pref_enable_notifications_false"
+        android:summaryOn="@string/pref_enable_notifications_true"
+        android:defaultValue="@string/pref_enable_notifications_default"/>
+
+</PreferenceScreen>
