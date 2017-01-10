@@ -3,6 +3,7 @@ package br.com.etm.sunshine;
 import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 
@@ -14,9 +15,10 @@ public class DetailActivity extends AppCompatActivity {
         setContentView(R.layout.activity_detail);
         // Create the detail fragment and add it to the activity
         // using a fragment transaction.
-
-        getSupportActionBar().setDisplayShowHomeEnabled(true);
-        getSupportActionBar().setIcon(R.mipmap.ic_launcher);
+        Toolbar toolbar = (Toolbar)findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+//        getSupportActionBar().setIcon(R.mipmap.ic_launcher);
 
         Bundle arguments = new Bundle();
         arguments.putParcelable(DetailFragment.DETAIL_URI, getIntent().getData());

@@ -137,8 +137,9 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
 
         ViewHolder viewHolder = (ViewHolder) getView().getTag();
 
-        String dateString = Utility.getDayName(getContext(), data.getLong(COL_WEATHER_DATE));
-        String dateMonthString = Utility.getFormattedMonthDay(getContext(), data.getLong(COL_WEATHER_DATE));
+//        String dateString = Utility.getDayName(getContext(), data.getLong(COL_WEATHER_DATE));
+//        String dateMonthString = Utility.getFormattedMonthDay(getContext(), data.getLong(COL_WEATHER_DATE));
+        String dateString = Utility.getFullFriendlyDayString(getContext(), data.getLong(COL_WEATHER_DATE));
 
         // Read wind speed and direction from cursor and update view
         float windSpeedStr = data.getFloat(COL_WEATHER_WIND_SPEED);
@@ -156,7 +157,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
 
 
         viewHolder.dateView.setText(dateString);
-        viewHolder.dateMonthView.setText(dateMonthString);
+//        viewHolder.dateMonthView.setText(dateMonthString);
 
         viewHolder.descView.setText(weatherDescription);
         viewHolder.descView.setContentDescription(getString(R.string.a11y_forecast, weatherDescription));
@@ -229,7 +230,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
 
     class ViewHolder {
         TextView dateView;
-        TextView dateMonthView;
+
         TextView humidityView;
         TextView windView;
         TextView pressureView;
@@ -239,15 +240,17 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         ImageView iconView;
 
         public ViewHolder(View view) {
-            this.dateView = (TextView) view.findViewById(R.id.forecast_date);
-            this.dateMonthView = (TextView) view.findViewById(R.id.forecast_date_month);
-            this.humidityView = (TextView) view.findViewById(R.id.forecast_humidity);
-            this.windView = (TextView) view.findViewById(R.id.forecast_wind);
-            this.pressureView = (TextView) view.findViewById(R.id.forecast_pressure);
-            this.descView = (TextView) view.findViewById(R.id.forecast_desc);
-            this.highView = (TextView) view.findViewById(R.id.forecast_high);
-            this.lowView = (TextView) view.findViewById(R.id.forecast_low);
-            this.iconView = (ImageView) view.findViewById(R.id.forecast_icon);
+            this.dateView = (TextView) view.findViewById(R.id.detail_date_textview);
+            this.descView = (TextView) view.findViewById(R.id.detail_forecast_textview);
+            this.iconView = (ImageView) view.findViewById(R.id.detail_icon);
+            this.highView = (TextView) view.findViewById(R.id.detail_high_textview);
+            this.lowView = (TextView) view.findViewById(R.id.detail_low_textview);
+
+            this.humidityView = (TextView) view.findViewById(R.id.detail_humidity_textview);
+            this.windView = (TextView) view.findViewById(R.id.detail_wind_textview);
+            this.pressureView = (TextView) view.findViewById(R.id.detail_pressure_textview);
+
+
         }
 
     }
