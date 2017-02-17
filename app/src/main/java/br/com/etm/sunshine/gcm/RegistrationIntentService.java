@@ -28,26 +28,26 @@ public class RegistrationIntentService extends IntentService {
     protected void onHandleIntent(Intent intent) {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
-        try {
-
-            synchronized (TAG) {
-                InstanceID instanceID = InstanceID.getInstance(this);
-                String token =
-                        instanceID.getToken(getString(R.string.gcm_defaultSenderId), GoogleCloudMessaging.INSTANCE_ID_SCOPE, null);
-
-                sendRegistrationToServer(token);
-
-                sharedPreferences.edit()
-                        .putBoolean(MainActivity.SENT_TOKEN_TO_SERVER, true).apply();
-            }
-
-        }catch (Exception e){
-            Log.d(TAG, "Failed to complete token refresh", e);
-
-            sharedPreferences.edit()
-                    .putBoolean(MainActivity.SENT_TOKEN_TO_SERVER, false).apply();
-
-        }
+//        try {
+//
+//            synchronized (TAG) {
+//                InstanceID instanceID = InstanceID.getInstance(this);
+//                String token =
+//                        instanceID.getToken(getString(R.string.gcm_defaultSenderId), GoogleCloudMessaging.INSTANCE_ID_SCOPE, null);
+//
+//                sendRegistrationToServer(token);
+//
+//                sharedPreferences.edit()
+//                        .putBoolean(MainActivity.SENT_TOKEN_TO_SERVER, true).apply();
+//            }
+//
+//        }catch (Exception e){
+//            Log.d(TAG, "Failed to complete token refresh", e);
+//
+//            sharedPreferences.edit()
+//                    .putBoolean(MainActivity.SENT_TOKEN_TO_SERVER, false).apply();
+//
+//        }
     }
 
 

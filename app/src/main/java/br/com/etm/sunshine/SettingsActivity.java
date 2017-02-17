@@ -9,19 +9,20 @@ import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
-import android.view.View;
+import android.text.TextUtils;
+
+import com.google.android.gms.location.places.Place;
+import com.google.android.gms.location.places.ui.PlacePicker;
+import com.google.android.gms.maps.model.LatLng;
 
 import br.com.etm.sunshine.data.WeatherContract;
 import br.com.etm.sunshine.sync.SunshineSyncAdapter;
 
-import static android.R.attr.value;
 
 public class SettingsActivity extends PreferenceActivity
         implements Preference.OnPreferenceChangeListener, SharedPreferences.OnSharedPreferenceChangeListener {
+
+    protected final static int PLACE_PICKER_REQUEST = 9090;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -118,6 +119,12 @@ public class SettingsActivity extends PreferenceActivity
         if (key.equals(getString(R.string.pref_key_location))) {
             // we've changed the location
             // first clear locationStatus
+
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.remove(getString(R.string.pref_location_latitude));
+            editor.remove(getString(R.string.pref_location_longitude));
+            editor.commit();
+
             Utility.resetLocationStatus(this);
             SunshineSyncAdapter.syncImmediately(this);
         } else if (key.equals(getString(R.string.pref_key_units))) {
@@ -137,5 +144,42 @@ public class SettingsActivity extends PreferenceActivity
     @Override
     public Intent getParentActivityIntent() {
         return super.getParentActivityIntent().addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        // Check to see if the result is from our Place Picker intent
+        if (requestCode == PLACE_PICKER_REQUEST) {
+            // Make sure the request was successful
+            if (resultCode == RESULT_OK) {
+                Place place = PlacePicker.getPlace(data, this);
+                String address = place.getAddress().toString();
+
+                // TODO(student): Get the LatLng object from the place -- this is a placeholder.
+                LatLng latLong = place.getLatLng();
+
+                // If the provided place doesn't have an address, we'll form a display-friendly
+                // string from the latlng values.
+                if (TextUtils.isEmpty(address)) {
+                    address = String.format("(%.2f, %.2f)",latLong.latitude, latLong.longitude);
+                }
+
+                SharedPreferences sharedPreferences =
+                        PreferenceManager.getDefaultSharedPreferences(this);
+                SharedPreferences.Editor editor = sharedPreferences.edit();
+                editor.putString(getString(R.string.pref_key_location), address);
+                editor.putFloat(getString(R.string.pref_location_latitude), (float) latLong.latitude);
+                editor.putFloat(getString(R.string.pref_location_longitude), (float) latLong.longitude);
+                editor.commit();
+
+                Preference locationPreference = findPreference(getString(R.string.pref_key_location));
+                setPreferenceSummary(locationPreference, address);
+                Utility.resetLocationStatus(this);
+                SunshineSyncAdapter.syncImmediately(this);
+
+            }
+        } else {
+            super.onActivityResult(requestCode, resultCode, data);
+        }
     }
 }

@@ -10,13 +10,17 @@ import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v4.view.MenuItemCompat;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.CardView;
 import android.support.v7.widget.ShareActionProvider;
+import android.support.v7.widget.Toolbar;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewParent;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -34,6 +38,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
 
     private final static int DETAIL_LOADER = 0;
     static final String DETAIL_URI = "URI";
+    static final String DETAIL_TRANSITION_ANIMATION = "DTA";
 
     private static final String FORECAST_SHARE_HASHTAG = " #SunshineApp";
     private static final String[] FORECAST_COLUMNS = {
@@ -70,8 +75,8 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     }
 
     String mForecastStr;
-    ShareActionProvider mShareActionProvider;
     Uri mUri;
+    private boolean mTransitionAnimation;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -80,6 +85,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         Bundle arguments = getArguments();
         if (arguments != null) {
             mUri = arguments.getParcelable(DetailFragment.DETAIL_URI);
+            mTransitionAnimation = arguments.getBoolean(DETAIL_TRANSITION_ANIMATION, false);
         }
 
         View rootView = inflater.inflate(R.layout.main_fragment_detail, container, false);
@@ -113,6 +119,10 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
                     null
             );
         }
+        ViewParent vp = getView().getParent();
+        if ( vp instanceof CardView ) {
+            ((View)vp).setVisibility(View.INVISIBLE);
+        }
         return null;
     }
 
@@ -131,9 +141,16 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
         //        Log.v(LOG_TAG, "In onLoadFinished");
-        if (!data.moveToFirst()) {
+        if (data == null || !data.moveToFirst()) {
             return;
         }
+
+        ViewParent vp = getView().getParent();
+        if (vp instanceof CardView) {
+            ((View) vp).setVisibility(View.VISIBLE);
+        }
+
+
 
         ViewHolder viewHolder = (ViewHolder) getView().getTag();
 
@@ -166,12 +183,23 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         // Read weather condition ID from cursor
         int weatherId = data.getInt(COL_WEATHER_CONDITION_ID);
 
-        // Use weather art image
-        Glide.with(this)
-                .load(Utility.getArtUrlForWeatherCondition(getActivity(), weatherId))
-                .error(Utility.getArtResourceForWeatherCondition(weatherId))
-                .crossFade()
-                .into(viewHolder.iconView);
+        if (Utility.usingLocalGraphics(getActivity())) {
+            viewHolder.iconView.setImageResource(Utility.getArtResourceForWeatherCondition(weatherId));
+        } else {
+            // Use weather art image
+            Glide.with(this)
+                    .load(Utility.getArtUrlForWeatherCondition(getActivity(), weatherId))
+                    .error(Utility.getArtResourceForWeatherCondition(weatherId))
+                    .crossFade()
+                    .into(viewHolder.iconView);
+        }
+
+//        // Use weather art image
+//        Glide.with(this)
+//                .load(Utility.getArtUrlForWeatherCondition(getActivity(), weatherId))
+//                .error(Utility.getArtResourceForWeatherCondition(weatherId))
+//                .crossFade()
+//                .into(viewHolder.iconView);
 
         viewHolder.iconView.setContentDescription(getString(R.string.a11y_forecast_icon, weatherDescription));
 
@@ -190,28 +218,51 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         viewHolder.pressureView.setContentDescription(viewHolder.pressureView.getText().toString());
 
 
-        // If onCreateOptionsMenu has already happened, we need to update the share intent now.
-        if (mShareActionProvider != null) {
-            mShareActionProvider.setShareIntent(createShareForecastIntent());
+//        // If onCreateOptionsMenu has already happened, we need to update the share intent now.
+//        if (mShareActionProvider != null) {
+//            mShareActionProvider.setShareIntent(createShareForecastIntent());
+//        }
+
+
+        AppCompatActivity activity = (AppCompatActivity) getActivity();
+        Toolbar toolbarView = (Toolbar) getView().findViewById(R.id.toolbar);
+
+        // We need to start the enter transition after the data has loaded
+        if (mTransitionAnimation) {
+            activity.supportStartPostponedEnterTransition();
+
+            if (null != toolbarView) {
+                activity.setSupportActionBar(toolbarView);
+
+                activity.getSupportActionBar().setDisplayShowTitleEnabled(false);
+                activity.getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            }
+        } else {
+            if (null != toolbarView) {
+                Menu menu = toolbarView.getMenu();
+                if (null != menu) menu.clear();
+                toolbarView.inflateMenu(R.menu.detailfragment);
+                finishCreatingMenu(toolbarView.getMenu());
+            }
         }
 
     }
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        inflater.inflate(R.menu.detailfragment, menu);
+        if (getActivity() instanceof DetailActivity) {
+            // Inflate the menu; this adds items to the action bar if it is present.
+            inflater.inflate(R.menu.detailfragment, menu);
 
+            finishCreatingMenu(menu);
+        }
+
+    }
+
+    private void finishCreatingMenu(Menu menu) {
         // Retrieve the share menu item
         MenuItem menuItem = menu.findItem(R.id.menu_item_share);
-
-        // Get the provider and hold onto it to set/change the share intent.
-        mShareActionProvider = (ShareActionProvider) MenuItemCompat.getActionProvider(menuItem);
-
-        // If onLoadFinished happens before this, we can go ahead and set the share intent now.
-        if (mForecastStr != null) {
-            mShareActionProvider.setShareIntent(createShareForecastIntent());
-        }
+        menuItem.setIntent(createShareForecastIntent());
     }
 
     @Override

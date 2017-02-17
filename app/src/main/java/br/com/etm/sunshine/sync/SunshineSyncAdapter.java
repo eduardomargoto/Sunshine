@@ -43,6 +43,7 @@ import br.com.etm.sunshine.MainActivity;
 import br.com.etm.sunshine.R;
 import br.com.etm.sunshine.Utility;
 import br.com.etm.sunshine.data.WeatherContract;
+import br.com.etm.sunshine.muzei.WeatherMuzeiSource;
 
 import static java.lang.annotation.RetentionPolicy.SOURCE;
 
@@ -50,7 +51,8 @@ import static java.lang.annotation.RetentionPolicy.SOURCE;
 public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
     public final String LOG_TAG = SunshineSyncAdapter.class.getSimpleName();
     private final static String API_KEY = "1d717180481d7757b9a4ab7b25040932";
-
+    public static final String ACTION_DATA_UPDATED =
+            "br.com.etm.sunshine.app.ACTION_DATA_UPDATED";
     // Interval at which to sync with the weather, in milliseconds.
 // 60 seconds (1 minute)  180 = 3 hours
     public static final int SYNC_INTERVAL = 180;
@@ -73,6 +75,14 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
 
     public SunshineSyncAdapter(Context context, boolean autoInitialize) {
         super(context, autoInitialize);
+    }
+
+    private void updateWidgets() {
+        Context context = getContext();
+        // Setting the package ensures that only components in our app will receive the broadcast
+        Intent dataUpdatedIntent = new Intent(ACTION_DATA_UPDATED)
+                .setPackage(context.getPackageName());
+        context.sendBroadcast(dataUpdatedIntent);
     }
 
     @Override
@@ -105,9 +115,18 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
             final String FORMAT_PARAM = "mode";
             final String UNITS_PARAM = "units";
             final String DAYS_PARAM = "cnt";
+            final String LAT_PARAM = "lat";
+            final String LONG_PARAM = "lon";
 
-            Uri builtUri = Uri.parse(FORECAST_BASE_URL).buildUpon()
-                    .appendQueryParameter(QUERY_PARAM, locationQuery)
+            Uri.Builder uriBuilder = Uri.parse(FORECAST_BASE_URL).buildUpon();
+
+            if (Utility.isLocationLatLonAvailable(getContext())) {
+                uriBuilder.appendQueryParameter(LAT_PARAM, String.valueOf(Utility.getLocationLatitude(getContext())))
+                        .appendQueryParameter(LONG_PARAM, String.valueOf(Utility.getLocationLongitude(getContext())));
+            } else {
+                uriBuilder.appendQueryParameter(QUERY_PARAM, locationQuery);
+            }
+            Uri builtUri = uriBuilder
                     .appendQueryParameter(FORMAT_PARAM, format)
                     .appendQueryParameter(UNITS_PARAM, units)
                     .appendQueryParameter(DAYS_PARAM, Integer.toString(numDays))
@@ -332,6 +351,9 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
                         WeatherContract.WeatherEntry.COLUMN_DATE + " <= ?",
                         new String[]{Long.toString(dayTime.setJulianDay(julianStartDay - 1))});
 
+
+                updateWidgets();
+                updateMuzei();
                 notifyWeather();
                 setLocationStatus(getContext(), LOCATION_STATUS_OK);
             }
@@ -342,6 +364,16 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
             Log.e(LOG_TAG, e.getMessage(), e);
             e.printStackTrace();
             setLocationStatus(getContext(), LOCATION_STATUS_SERVER_INVALID);
+        }
+    }
+
+    private void updateMuzei() {
+        // Muzei is only compatible with Jelly Bean MR1+ devices, so there's no need to update the
+        // Muzei background on lower API level devices
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            Context context = getContext();
+            context.startService(new Intent(ACTION_DATA_UPDATED)
+                    .setClass(context, WeatherMuzeiSource.class));
         }
     }
 
